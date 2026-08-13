@@ -1,24 +1,50 @@
 import streamlit as st
+import bcrypt
 from sqlalchemy import create_engine, text
 
-st.write("DATABASE_URL bulundu mu?")
+st.set_page_config(
+    page_title="AkademIQ",
+    page_icon="🎓",
+    layout="centered",
+)
 
-try:
-    url = st.secrets["DATABASE_URL"]
-    st.success("Secrets OK")
-    st.code(url.replace("110856Le10..", "********"))
-except Exception as e:
-    st.error(e)
-    st.stop()
+engine = create_engine(st.secrets["DATABASE_URL"])
 
-try:
-    engine = create_engine(url)
 
-    with engine.connect() as conn:
-        version = conn.execute(text("select version()")).scalar()
+def login():
 
-    st.success("Bağlantı başarılı")
-    st.write(version)
+    st.title("🎓 AkademIQ")
 
-except Exception as e:
-    st.exception(e)
+    username = st.text_input("Kullanıcı Adı")
+    password = st.text_input("Şifre", type="password")
+
+    if st.button("Giriş Yap"):
+
+        with engine.connect() as conn:
+
+            user = conn.execute(
+                text("""
+                    SELECT kullanici_adi,
+                           sifre_hash,
+                           rol
+                    FROM kullanicilar
+                    WHERE kullanici_adi=:u
+                    AND aktif=TRUE
+                """),
+                {"u": username},
+            ).mappings().first()
+
+        if user is None:
+            st.error("Kullanıcı bulunamadı.")
+            return
+
+        if bcrypt.checkpw(
+            password.encode(),
+            user["sifre_hash"].encode(),
+        ):
+            st.success(f"Hoş geldiniz {user['rol']}")
+        else:
+            st.error("Şifre yanlış.")
+
+
+login()
