@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 
+from services.student_database import import_students
 from services.student_template import create_student_template
 from services.student_import import read_student_excel
 from services.student_validation import validate_student_dataframe
@@ -86,11 +87,26 @@ def show(engine):
 
             st.success("Doğrulama başarılı.")
 
-            st.button(
+            if st.button(
                 "📥 Veritabanına Aktar",
                 type="primary",
                 use_container_width=True,
-            )
+            ):
+
+                try:
+
+                    count = import_students(
+                        engine,
+                        df,
+                    )
+
+                    st.success(
+                        f"{count} öğrenci başarıyla aktarıldı."
+                    )
+
+                except Exception as e:
+
+                    st.error(str(e))
 
         else:
 
