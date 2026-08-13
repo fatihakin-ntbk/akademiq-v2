@@ -47,6 +47,7 @@ def show(engine):
 
         if uploaded_file is None:
             st.info("Henüz Excel yüklenmedi.")
+
         else:
 
             try:
@@ -78,7 +79,9 @@ def show(engine):
                 use_container_width=True,
             )
 
-            st.info(f"Toplam {len(df)} öğrenci bulundu.")
+            st.info(
+                f"Toplam {len(df)} öğrenci bulundu."
+            )
 
             st.divider()
 
@@ -122,127 +125,67 @@ def show(engine):
                     hide_index=True,
                     use_container_width=True,
                 )
-    import streamlit as st
-import pandas as pd
-
-from services.student_template import create_student_template
-from services.student_import import read_student_excel
-from services.student_validation import validate_student_dataframe
-from services.student_database import import_students
-from services.student_list import get_students
-
-
-def show(engine):
-
-    st.title("👨‍🎓 Öğrenci & Veli Yönetimi")
-
-    tab1, tab2, tab3 = st.tabs(
-        [
-            "📥 Öğrenci Aktar",
-            "👨‍🎓 Öğrenciler",
-            "👨‍👩‍👦 Veliler",
-        ]
-    )
-
-    # =====================================================
-    # TAB 1
+        # =====================================================
+    # TAB 2
     # =====================================================
 
-    with tab1:
+    with tab2:
 
-        st.subheader("1️⃣ Excel Şablonunu İndir")
+        st.subheader("👨‍🎓 Öğrenciler")
 
-        st.download_button(
-            "📄 Öğrenci Excel Şablonunu İndir",
-            data=create_student_template(),
-            file_name="Ogrenci_Veli_Sablonu.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True,
+        search = st.text_input(
+            "Ara (Okul No, Ad veya Soyad)"
         )
 
-        st.divider()
-
-        st.subheader("2️⃣ Excel Yükle")
-
-        uploaded_file = st.file_uploader(
-            "Excel Dosyası",
-            type=["xlsx"],
+        students = get_students(
+            engine,
+            search,
         )
 
-        if uploaded_file is None:
-            st.info("Henüz Excel yüklenmedi.")
-        else:
+        st.info(
+            f"Toplam {len(students)} öğrenci bulundu."
+        )
 
-            try:
+        if students.empty:
 
-                df = read_student_excel(uploaded_file)
-
-            except Exception as e:
-
-                st.error(str(e))
-                return
-
-            st.success("Excel başarıyla okundu.")
-
-            preview = pd.DataFrame()
-
-            preview["OKUL NO"] = df["OKUL NO"]
-            preview["ADI"] = df["ÖĞRENCİ ADI"]
-            preview["SOYADI"] = df["ÖĞRENCİ SOYADI"]
-            preview["SINIF"] = df["SINIFI"]
-            preview["VELİ"] = (
-                df["VELİ ADI"] + " " + df["VELİ SOYADI"]
+            st.warning(
+                "Aktif dönemde öğrenci bulunamadı."
             )
 
-            st.subheader("Önizleme")
+        else:
+
+            students["Ad Soyad"] = (
+                students["ad"]
+                + " "
+                + students["soyad"]
+            )
+
+            table = students[
+                [
+                    "ogrenci_no",
+                    "Ad Soyad",
+                    "sinif",
+                ]
+            ].rename(
+                columns={
+                    "ogrenci_no": "Okul No",
+                    "sinif": "Sınıf",
+                }
+            )
 
             st.dataframe(
-                preview.head(10),
+                table,
                 hide_index=True,
                 use_container_width=True,
             )
+        # =====================================================
+    # TAB 3
+    # =====================================================
 
-            st.info(f"Toplam {len(df)} öğrenci bulundu.")
+    with tab3:
 
-            st.divider()
+        st.subheader("👨‍👩‍👦 Veliler")
 
-            st.subheader("3️⃣ Doğrulama")
-
-            errors = validate_student_dataframe(df)
-
-            if errors.empty:
-
-                st.success("Doğrulama başarılı.")
-
-                if st.button(
-                    "📥 Veritabanına Aktar",
-                    type="primary",
-                    use_container_width=True,
-                ):
-
-                    try:
-
-                        count = import_students(
-                            engine,
-                            df,
-                        )
-
-                        st.success(
-                            f"{count} öğrenci başarıyla aktarıldı."
-                        )
-
-                    except Exception as e:
-
-                        st.error(str(e))
-
-            else:
-
-                st.error(
-                    f"{len(errors)} hata bulundu."
-                )
-
-                st.dataframe(
-                    errors,
-                    hide_index=True,
-                    use_container_width=True,
-                )
+        st.info(
+            "Bu modül bir sonraki adımda geliştirilecek."
+        )
