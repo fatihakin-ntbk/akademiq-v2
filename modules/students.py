@@ -1,6 +1,8 @@
 import streamlit as st
+import pandas as pd
 
 from services.student_template import create_student_template
+from services.student_import import read_student_excel
 
 
 def show(engine):
@@ -15,17 +17,13 @@ def show(engine):
         ]
     )
 
-    # ===================================================
+    # ==================================================
     # ÖĞRENCİ AKTAR
-    # ===================================================
+    # ==================================================
 
     with tab1:
 
-        st.subheader("Öğrenci Excel Şablonu")
-
-        st.write(
-            "Lütfen önce sistemin oluşturduğu Excel şablonunu indiriniz."
-        )
+        st.subheader("1️⃣ Excel Şablonunu İndir")
 
         st.download_button(
             label="📄 Öğrenci Excel Şablonunu İndir",
@@ -37,45 +35,79 @@ def show(engine):
 
         st.divider()
 
-        st.subheader("Excel Yükle")
+        st.subheader("2️⃣ Excel Dosyasını Yükle")
 
         uploaded_file = st.file_uploader(
-            "Excel dosyasını seçiniz",
+            "Excel dosyası",
             type=["xlsx"],
         )
 
         if uploaded_file is None:
 
-            st.info(
-                "Henüz herhangi bir Excel dosyası yüklenmedi."
-            )
+            st.info("Henüz Excel yüklenmedi.")
 
-        else:
+            return
 
-            st.success(
-                f"{uploaded_file.name} başarıyla yüklendi."
-            )
+        try:
 
-            st.info(
-                "Bir sonraki adımda önizleme ekranı hazırlanacak."
-            )
+            df = read_student_excel(uploaded_file)
 
-    # ===================================================
+        except Exception as e:
+
+            st.error(str(e))
+
+            return
+
+        st.success("Excel başarıyla okundu.")
+
+        st.write("")
+
+        st.subheader("Önizleme")
+
+        preview = pd.DataFrame()
+
+        preview["OKUL NO"] = df["OKUL NO"]
+
+        preview["ADI"] = df["ÖĞRENCİ ADI"]
+
+        preview["SOYADI"] = df["ÖĞRENCİ SOYADI"]
+
+        preview["SINIF"] = df["SINIFI"]
+
+        preview["VELİ"] = (
+            df["VELİ ADI"]
+            + " "
+            + df["VELİ SOYADI"]
+        )
+
+        st.dataframe(
+
+            preview.head(10),
+
+            use_container_width=True,
+
+            hide_index=True,
+
+        )
+
+        st.info(
+
+            f"Toplam **{len(df)}** öğrenci bulundu."
+
+        )
+
+    # ==================================================
     # ÖĞRENCİLER
-    # ===================================================
+    # ==================================================
 
     with tab2:
 
-        st.info(
-            "Henüz öğrenci bulunmuyor."
-        )
+        st.info("Henüz öğrenci bulunmuyor.")
 
-    # ===================================================
+    # ==================================================
     # VELİLER
-    # ===================================================
+    # ==================================================
 
     with tab3:
 
-        st.info(
-            "Henüz veli bulunmuyor."
-        )
+        st.info("Henüz veli bulunmuyor.")
