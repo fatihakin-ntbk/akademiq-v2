@@ -2,11 +2,11 @@ import streamlit as st
 import bcrypt
 from sqlalchemy import create_engine, text
 
-from pages import home
-from pages import donemler
-from pages import students
-from pages import exams
-from pages import analysis
+from modules import home
+from modules import donemler
+from modules import students
+from modules import exams
+from modules import analysis
 
 # ------------------------------------------------
 # Sayfa
