@@ -44,19 +44,19 @@ def user_exists(conn, username):
         text("""
             SELECT id
             FROM kullanicilar
-            WHERE kullanici_adi=:username
+            WHERE kullanici_adi = :username
             LIMIT 1
         """),
         {
             "username": username
-        }
+        },
     ).mappings().first()
 
     return row is not None
 
 
 # --------------------------------------------------
-# Kullanıcı oluştur
+# Kullanıcı Oluştur
 # --------------------------------------------------
 
 def create_user(
@@ -75,15 +75,17 @@ def create_user(
         text("""
             INSERT INTO kullanicilar
             (
+                id,
                 rol,
                 referans_id,
                 kullanici_adi,
                 sifre_hash,
-                ilk_giris,
+                sifre_degistirilmeli,
                 aktif
             )
             VALUES
             (
+                gen_random_uuid(),
                 :rol,
                 :referans_id,
                 :username,
@@ -97,7 +99,7 @@ def create_user(
             "referans_id": referans_id,
             "username": username,
             "password": hash_password(password),
-        }
+        },
     )
 
     return password
