@@ -339,6 +339,10 @@ def create_student_term(
 # Öğrenci Aktar
 # --------------------------------------------------
 
+# --------------------------------------------------
+# Öğrenci Aktar
+# --------------------------------------------------
+
 def import_students(engine, df):
 
     imported = 0
@@ -348,6 +352,10 @@ def import_students(engine, df):
         term_id = get_active_term(conn)
 
         for _, row in df.iterrows():
+
+            # -------------------------
+            # Öğrenci
+            # -------------------------
 
             student = find_student(
                 conn,
@@ -371,6 +379,10 @@ def import_students(engine, df):
                     row,
                 )
 
+            # -------------------------
+            # Veli
+            # -------------------------
+
             parent = find_parent(
                 conn,
                 row,
@@ -387,12 +399,31 @@ def import_students(engine, df):
                     row,
                 )
 
+            # -------------------------
+            # Kullanıcı hesapları
+            # -------------------------
+
+            create_missing_users(
+                conn,
+                student_id,
+                parent_id,
+                row,
+            )
+
+            # -------------------------
+            # İlişki
+            # -------------------------
+
             create_student_parent_relation(
                 conn,
                 student_id,
                 parent_id,
                 row["VELİ YAKINLIĞI"],
             )
+
+            # -------------------------
+            # Dönem
+            # -------------------------
 
             create_student_term(
                 conn,
@@ -404,3 +435,34 @@ def import_students(engine, df):
             imported += 1
 
     return imported
+# --------------------------------------------------
+# Kullanıcı Hesaplarını Oluştur
+# --------------------------------------------------
+
+def create_missing_users(
+    conn,
+    student_id,
+    parent_id,
+    row,
+):
+
+    create_user(
+        conn=conn,
+        rol="ogrenci",
+        referans_id=student_id,
+        username=str(row["OKUL NO"]).strip(),
+    )
+
+    username = str(row["VELİ TELEFON"]).strip()
+
+    if username == "":
+        username = str(row["VELİ TC KİMLİK NO"]).strip()
+
+    if username:
+
+        create_user(
+            conn=conn,
+            rol="veli",
+            referans_id=parent_id,
+            username=username,
+        )    
