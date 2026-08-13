@@ -2,15 +2,9 @@ import streamlit as st
 from sqlalchemy import create_engine, text
 import bcrypt
 
-st.set_page_config(
-    page_title="AkademIQ",
-    page_icon="🎓",
-    layout="centered",
-)
+st.set_page_config(page_title="AkademIQ", page_icon="🎓")
 
-DATABASE_URL = st.secrets["DATABASE_URL"]
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(st.secrets["DATABASE_URL"])
 
 st.title("🎓 AkademIQ")
 
@@ -23,11 +17,12 @@ if st.button("Giriş Yap"):
 
         user = conn.execute(
             text("""
-                SELECT *
+                SELECT kullanici_adi,
+                       sifre_hash,
+                       rol
                 FROM kullanicilar
                 WHERE kullanici_adi=:u
-                AND aktif=TRUE
-                LIMIT 1
+                  AND aktif=TRUE
             """),
             {"u": username},
         ).mappings().first()
