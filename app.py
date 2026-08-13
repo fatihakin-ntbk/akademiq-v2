@@ -1,41 +1,24 @@
 import streamlit as st
 from sqlalchemy import create_engine, text
-import bcrypt
 
-st.set_page_config(page_title="AkademIQ", page_icon="🎓")
+st.write("DATABASE_URL bulundu mu?")
 
-engine = create_engine(st.secrets["DATABASE_URL"])
+try:
+    url = st.secrets["DATABASE_URL"]
+    st.success("Secrets OK")
+    st.code(url.replace("110856Le10..", "********"))
+except Exception as e:
+    st.error(e)
+    st.stop()
 
-st.title("🎓 AkademIQ")
-
-username = st.text_input("Kullanıcı Adı")
-password = st.text_input("Şifre", type="password")
-
-if st.button("Giriş Yap"):
+try:
+    engine = create_engine(url)
 
     with engine.connect() as conn:
+        version = conn.execute(text("select version()")).scalar()
 
-        user = conn.execute(
-            text("""
-                SELECT kullanici_adi,
-                       sifre_hash,
-                       rol
-                FROM kullanicilar
-                WHERE kullanici_adi=:u
-                  AND aktif=TRUE
-            """),
-            {"u": username},
-        ).mappings().first()
+    st.success("Bağlantı başarılı")
+    st.write(version)
 
-    if user is None:
-        st.error("Kullanıcı bulunamadı.")
-
-    elif bcrypt.checkpw(
-        password.encode(),
-        user["sifre_hash"].encode(),
-    ):
-
-        st.success(f"Hoş geldiniz {user['rol']}")
-
-    else:
-        st.error("Şifre yanlış.")
+except Exception as e:
+    st.exception(e)
