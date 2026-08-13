@@ -178,14 +178,62 @@ def show(engine):
                 hide_index=True,
                 use_container_width=True,
             )
-        # =====================================================
+      # =====================================================
     # TAB 3
     # =====================================================
 
     with tab3:
 
+        from services.parent_list import get_parents
+
         st.subheader("👨‍👩‍👦 Veliler")
 
+        search = st.text_input(
+            "Ara (Ad, Soyad veya Telefon)",
+            key="parent_search",
+        )
+
+        parents = get_parents(
+            engine,
+            search,
+        )
+
+        st.info(
+            f"Toplam {len(parents)} veli bulundu."
+        )
+
+        if parents.empty:
+
+            st.warning(
+                "Kayıtlı veli bulunamadı."
+            )
+
+        else:
+
+            parents["Veli"] = (
+                parents["ad"]
+                + " "
+                + parents["soyad"]
+            )
+
+            table = parents[
+                [
+                    "Veli",
+                    "telefon",
+                    "ogrenci_sayisi",
+                ]
+            ].rename(
+                columns={
+                    "telefon": "Telefon",
+                    "ogrenci_sayisi": "Öğrenci Sayısı",
+                }
+            )
+
+            st.dataframe(
+                table,
+                hide_index=True,
+                use_container_width=True,
+            )
         st.info(
             "Bu modül bir sonraki adımda geliştirilecek."
         )
