@@ -2,9 +2,11 @@ import uuid
 
 from sqlalchemy import text
 
+from services.user_service import create_user
+
 
 # --------------------------------------------------
-# Aktif dönem
+# Aktif Dönem
 # --------------------------------------------------
 
 def get_active_term(conn):
@@ -38,8 +40,8 @@ def find_student(conn, ogrenci_no):
             LIMIT 1
         """),
         {
-            "ogrenci_no": str(ogrenci_no)
-        }
+            "ogrenci_no": str(ogrenci_no).strip()
+        },
     ).mappings().first()
 
 
@@ -76,11 +78,18 @@ def create_student(conn, row):
         """),
         {
             "id": student_id,
-            "ogrenci_no": str(row["OKUL NO"]),
-            "tc": str(row["ÖĞRENCİ TC KİMLİK NO"]),
+            "ogrenci_no": str(row["OKUL NO"]).strip(),
+            "tc": str(row["ÖĞRENCİ TC KİMLİK NO"]).strip(),
             "ad": str(row["ÖĞRENCİ ADI"]).strip(),
             "soyad": str(row["ÖĞRENCİ SOYADI"]).strip(),
         },
+    )
+
+    create_user(
+        conn=conn,
+        rol="ogrenci",
+        referans_id=student_id,
+        username=str(row["OKUL NO"]).strip(),
     )
 
     return student_id
@@ -95,27 +104,21 @@ def update_student(conn, student_id, row):
     conn.execute(
         text("""
             UPDATE ogrenciler
-
             SET
-
                 tc_kimlik_no = :tc,
-
                 ad = :ad,
-
                 soyad = :soyad,
-
                 aktif = TRUE
-
             WHERE id = :id
         """),
         {
             "id": student_id,
-            "tc": str(row["ÖĞRENCİ TC KİMLİK NO"]),
+            "tc": str(row["ÖĞRENCİ TC KİMLİK NO"]).strip(),
             "ad": str(row["ÖĞRENCİ ADI"]).strip(),
             "soyad": str(row["ÖĞRENCİ SOYADI"]).strip(),
         },
     )
-  # --------------------------------------------------
+# --------------------------------------------------
 # Veli Bul
 # --------------------------------------------------
 
@@ -126,15 +129,13 @@ def find_parent(conn, row):
     ad = str(row["VELİ ADI"]).strip()
     soyad = str(row["VELİ SOYADI"]).strip()
 
-    # Önce TC
-
-    if tc != "":
+    if tc:
 
         veli = conn.execute(
             text("""
                 SELECT *
                 FROM veliler
-                WHERE tc_kimlik_no = :tc
+                WHERE tc_kimlik_no=:tc
                 LIMIT 1
             """),
             {"tc": tc},
@@ -143,15 +144,13 @@ def find_parent(conn, row):
         if veli:
             return veli
 
-    # Telefon
-
-    if telefon != "":
+    if telefon:
 
         veli = conn.execute(
             text("""
                 SELECT *
                 FROM veliler
-                WHERE telefon = :telefon
+                WHERE telefon=:telefon
                 LIMIT 1
             """),
             {"telefon": telefon},
@@ -160,14 +159,12 @@ def find_parent(conn, row):
         if veli:
             return veli
 
-    # Ad Soyad
-
-    veli = conn.execute(
+    return conn.execute(
         text("""
             SELECT *
             FROM veliler
-            WHERE ad = :ad
-            AND soyad = :soyad
+            WHERE ad=:ad
+              AND soyad=:soyad
             LIMIT 1
         """),
         {
@@ -175,8 +172,6 @@ def find_parent(conn, row):
             "soyad": soyad,
         },
     ).mappings().first()
-
-    return veli
 
 
 # --------------------------------------------------
@@ -215,6 +210,20 @@ def create_parent(conn, row):
         },
     )
 
+    username = str(row["VELİ TELEFON"]).strip()
+
+    if username == "":
+        username = str(row["VELİ TC KİMLİK NO"]).strip()
+
+    if username:
+
+        create_user(
+            conn=conn,
+            rol="veli",
+            referans_id=parent_id,
+            username=username,
+        )
+
     return parent_id
 
 
@@ -229,12 +238,12 @@ def create_student_parent_relation(
     yakinlik,
 ):
 
-    relation = conn.execute(
+    row = conn.execute(
         text("""
             SELECT id
             FROM ogrenci_velileri
-            WHERE ogrenci_id = :ogrenci
-            AND veli_id = :veli
+            WHERE ogrenci_id=:ogrenci
+              AND veli_id=:veli
             LIMIT 1
         """),
         {
@@ -243,7 +252,7 @@ def create_student_parent_relation(
         },
     ).mappings().first()
 
-    if relation:
+    if row:
         return
 
     conn.execute(
@@ -272,7 +281,7 @@ def create_student_parent_relation(
             "yakinlik": str(yakinlik).strip(),
         },
     )
-  # --------------------------------------------------
+# --------------------------------------------------
 # Dönem Kaydı
 # --------------------------------------------------
 
@@ -288,7 +297,7 @@ def create_student_term(
             SELECT id
             FROM ogrenci_donemleri
             WHERE ogrenci_id=:ogrenci_id
-            AND donem_id=:donem_id
+              AND donem_id=:donem_id
             LIMIT 1
         """),
         {
