@@ -1,4 +1,9 @@
 streamlit
-supabase
 pandas
 openpyxl
+sqlalchemy
+psycopg2-binary
+supabase
+pypdf
+bcrypt
+python-dotenv
